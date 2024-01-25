@@ -19,7 +19,6 @@ MODEL_TYPES = [
     's',
     'b',
     'l',
-    'h',
 ]
 
 CKPTS = [
@@ -29,7 +28,7 @@ CKPTS = [
     "vitpose-{MODEL_TYPE}-coco_25.pth",
     "vitpose-{MODEL_TYPE}-coco.pth",
     "vitpose-{MODEL_TYPE}-mpii.pth",
-    "vitpose-{MODEL_TYPE}-wholebody.pth",
+    # "vitpose-{MODEL_TYPE}-wholebody.pth",
 ]
 
 for model_type in MODEL_TYPES:
@@ -103,3 +102,4 @@ for model_type in MODEL_TYPES:
         del model
         del model_cfg
         del ckpt
+        del dataset
