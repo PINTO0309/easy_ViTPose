@@ -1,7 +1,7 @@
 
 import math
 import warnings
-
+import numpy as np
 from itertools import repeat
 import collections.abc
 
@@ -119,7 +119,7 @@ class DropPath(nn.Module):
 
     def forward(self, x):
         return drop_path(x, self.drop_prob, self.training)
-    
+
     def extra_repr(self):
         return 'p={}'.format(self.drop_prob)
 
@@ -164,7 +164,8 @@ class Attention(nn.Module):
     def forward(self, x):
         B, N, C = x.shape
         qkv = self.qkv(x)
-        qkv = qkv.reshape(B, N, 3, self.num_heads, -1).permute(2, 0, 3, 1, 4)
+        last = np.prod(qkv.shape) // (B * N * 3 * self.num_heads)
+        qkv = qkv.reshape(B, N, 3, self.num_heads, last).permute(2, 0, 3, 1, 4)
         q, k, v = qkv[0], qkv[1], qkv[2]   # make torchscript happy (cannot use tensor as tuple)
 
         q = q * self.scale
@@ -173,7 +174,9 @@ class Attention(nn.Module):
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
 
-        x = (attn @ v).transpose(1, 2).reshape(B, N, -1)
+        t = (attn @ v).transpose(1, 2)
+        last = np.prod(t.shape) // (B * N)
+        x = t.reshape(B, N, last)
         x = self.proj(x)
         x = self.proj_drop(x)
 
@@ -181,12 +184,12 @@ class Attention(nn.Module):
 
 class Block(nn.Module):
 
-    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, 
-                 drop=0., attn_drop=0., drop_path=0., act_layer=nn.GELU, 
+    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None,
+                 drop=0., attn_drop=0., drop_path=0., act_layer=nn.GELU,
                  norm_layer=nn.LayerNorm, attn_head_dim=None
                  ):
         super().__init__()
-        
+
         self.norm1 = norm_layer(dim)
         self.attn = Attention(
             dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale,
@@ -226,7 +229,8 @@ class PatchEmbed(nn.Module):
         x = self.proj(x)
         Hp, Wp = x.shape[2], x.shape[3]
 
-        x = x.flatten(2).transpose(1, 2)
+        t = np.prod(x.shape) // (x.shape[0] * x.shape[1])
+        x = x.reshape(x.shape[0], x.shape[1], t).transpose(1, 2)
         return x, (Hp, Wp)
 
 
@@ -266,13 +270,13 @@ class ViT(nn.Module):
     def __init__(self,
                  img_size=224, patch_size=16, in_chans=3, num_classes=80, embed_dim=768, depth=12,
                  num_heads=12, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop_rate=0., attn_drop_rate=0.,
-                 drop_path_rate=0., hybrid_backbone=None, norm_layer=None, use_checkpoint=False, 
+                 drop_path_rate=0., hybrid_backbone=None, norm_layer=None, use_checkpoint=False,
                  frozen_stages=-1, ratio=1, last_norm=True,
                  patch_padding='pad', freeze_attn=False, freeze_ffn=False,
                  ):
         super(ViT, self).__init__()
         # Protect mutable default arguments
-        
+
         norm_layer = norm_layer or partial(nn.LayerNorm, eps=1e-6)
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
@@ -284,11 +288,9 @@ class ViT(nn.Module):
         self.depth = depth
 
         if hybrid_backbone is not None:
-            self.patch_embed = HybridEmbed(
-                hybrid_backbone, img_size=img_size, in_chans=in_chans, embed_dim=embed_dim)
+            self.patch_embed = HybridEmbed(hybrid_backbone, img_size=img_size, in_chans=in_chans, embed_dim=embed_dim)
         else:
-            self.patch_embed = PatchEmbed(
-                img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim, ratio=ratio)
+            self.patch_embed = PatchEmbed(img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim, ratio=ratio)
         num_patches = self.patch_embed.num_patches
 
         # since the pretraining model has class token
@@ -391,7 +393,9 @@ class ViT(nn.Module):
 
         x = self.last_norm(x)
 
-        xp = x.permute(0, 2, 1).reshape(B, -1, Hp, Wp).contiguous()
+        t = x.permute(0, 2, 1)
+        last = np.prod(t.shape) // (B * Hp * Wp)
+        xp = t.reshape(B, last, Hp, Wp).contiguous()
 
         return xp
 

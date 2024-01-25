@@ -11,3 +11,5 @@ examples
 outputs
 .ipynb_checkpoints
 easy_ViTPose.egg-info
+*.engine
+*.profile

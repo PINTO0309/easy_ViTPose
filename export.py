@@ -19,7 +19,7 @@ MODEL_TYPES = [
     's',
     'b',
     'l',
-    # 'h',
+    'h',
 ]
 
 CKPTS = [

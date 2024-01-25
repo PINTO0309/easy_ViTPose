@@ -353,5 +353,6 @@ class VitInference:
                                              stream=self._stream)[0]
 
         # Reshape to output size
-        heatmaps = heatmaps.reshape(1, -1, img_input.shape[2] // 4, img_input.shape[3] // 4)
+        r = np.prod(heatmaps.shape) // (1 * img_input.shape[2] // 4 * img_input.shape[3] // 4)
+        heatmaps = heatmaps.reshape(1, r, img_input.shape[2] // 4, img_input.shape[3] // 4)
         return self.postprocess(heatmaps, org_w, org_h)

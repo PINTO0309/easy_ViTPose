@@ -26,8 +26,7 @@ class JointsMSELoss(nn.Module):
         batch_size = output.size(0)
         num_joints = output.size(1)
 
-        heatmaps_pred = output.reshape(
-            (batch_size, num_joints, -1)).split(1, 1)
+        heatmaps_pred = output.reshape((batch_size, num_joints, -1)).split(1, 1)
         heatmaps_gt = target.reshape((batch_size, num_joints, -1)).split(1, 1)
 
         loss = 0.
@@ -66,10 +65,8 @@ class CombinedTargetMSELoss(nn.Module):
     def forward(self, output, target, target_weight):
         batch_size = output.size(0)
         num_channels = output.size(1)
-        heatmaps_pred = output.reshape(
-            (batch_size, num_channels, -1)).split(1, 1)
-        heatmaps_gt = target.reshape(
-            (batch_size, num_channels, -1)).split(1, 1)
+        heatmaps_pred = output.reshape((batch_size, num_channels, -1)).split(1, 1)
+        heatmaps_gt = target.reshape((batch_size, num_channels, -1)).split(1, 1)
         loss = 0.
         num_joints = num_channels // 3
         for idx in range(num_joints):
@@ -130,8 +127,7 @@ class JointsOHKMMSELoss(nn.Module):
         if num_joints < self.topk:
             raise ValueError(f'topk ({self.topk}) should not '
                              f'larger than num_joints ({num_joints}).')
-        heatmaps_pred = output.reshape(
-            (batch_size, num_joints, -1)).split(1, 1)
+        heatmaps_pred = output.reshape((batch_size, num_joints, -1)).split(1, 1)
         heatmaps_gt = target.reshape((batch_size, num_joints, -1)).split(1, 1)
 
         losses = []
