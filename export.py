@@ -19,7 +19,7 @@ MODEL_TYPES = [
     's',
     'b',
     'l',
-    'h',
+    # 'h',
 ]
 
 CKPTS = [
@@ -63,11 +63,6 @@ for model_type in MODEL_TYPES:
         device = next(model.parameters()).device
         inputs = torch.randn(1, C, H, W).to(device)
 
-        # dynamic_axes = {
-        #     'input': {0: 'batch'},
-        #     'output': {0: 'batch'}
-        # }
-
         out_name = os.path.basename(ckpt_file).replace('.pth', f'_Nx{C}x{H}x{W}')
         if not os.path.isdir(args.output): out_name = os.path.basename(args.output)
         output_onnx = os.path.join(os.path.dirname(args.output), out_name.replace('-','_') + '.onnx')
@@ -79,11 +74,13 @@ for model_type in MODEL_TYPES:
             input_names=input_names,
             output_names=output_names,
             opset_version=11,
-            # dynamic_axes=dynamic_axes
         )
-        model_onnx1 = onnx.load(output_onnx)
-        model_onnx1 = onnx.shape_inference.infer_shapes(model_onnx1)
-        onnx.save(model_onnx1, output_onnx)
+        try:
+            model_onnx1 = onnx.load(output_onnx)
+            model_onnx1 = onnx.shape_inference.infer_shapes(model_onnx1)
+            onnx.save(model_onnx1, output_onnx)
+        except:
+            pass
         model_onnx2 = onnx.load(output_onnx)
         model_simp, check = simplify(model_onnx2)
         onnx.save(model_simp, output_onnx)
@@ -103,3 +100,6 @@ for model_type in MODEL_TYPES:
         print(f">>> Saved at: {os.path.abspath(output_onnx)}")
         print('=' * 80)
         print()
+        del model
+        del model_cfg
+        del ckpt
