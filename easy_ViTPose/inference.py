@@ -7,8 +7,6 @@ import cv2
 import numpy as np
 import torch
 
-from ultralytics import YOLO
-
 from .configs.ViTPose_common import data_cfg
 from .sort import Sort
 from .vit_models.model import ViTPose
@@ -104,7 +102,7 @@ class VitInference:
                 device = 'cpu'
 
         self.device = device
-        self.yolo = YOLO(yolo, task='detect')
+        # self.yolo = YOLO(yolo, task='detect')
         self.yolo_size = yolo_size
         self.yolo_step = yolo_step
         self.is_video = is_video
