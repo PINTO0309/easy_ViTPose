@@ -63,10 +63,10 @@ for model_type in MODEL_TYPES:
         device = next(model.parameters()).device
         inputs = torch.randn(1, C, H, W).to(device)
 
-        dynamic_axes = {
-            'input': {0: 'batch'},
-            'output': {0: 'batch'}
-        }
+        # dynamic_axes = {
+        #     'input': {0: 'batch'},
+        #     'output': {0: 'batch'}
+        # }
 
         out_name = os.path.basename(ckpt_file).replace('.pth', f'_Nx{C}x{H}x{W}')
         if not os.path.isdir(args.output): out_name = os.path.basename(args.output)
